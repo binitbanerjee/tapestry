@@ -37,8 +37,6 @@ defmodule Node do
     else
       if hop_count<7 do
         next_hop(id,target,hop_count,finger_table,original_source, neighbor_provider_id)
-      # else
-      #   send boss_id,{:ok,{pid,hop_count}}
       end
     end
     Map.replace!(state,:count,current_count+1)
