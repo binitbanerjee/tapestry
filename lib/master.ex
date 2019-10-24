@@ -9,6 +9,12 @@ defmodule Master do
     end
   end
 
+  defp get_pid_without_collision(nodes_map) do
+    Enum.map(nodes_map,fn {_,p}->
+      p
+    end)
+  end
+
   def launch(nodes, request) do
     children = Enum.map(1..nodes, fn _x ->
       {:ok,pid} = Node.start_link([])
@@ -25,23 +31,18 @@ defmodule Master do
       GenServer.call(node_pid,{:init_route,node_key,table,self()})
     end)
 
-    # {node_key, node_pid} = Enum.random(nodes_map)
-    # recipient = get_random_key_but_not_self(node_key,"",nodes_map)
-    # GenServer.cast(node_pid,{:route_to_node,recipient,0,{node_key, node_pid}, neighbor_provider_id})
-    # GenServer.cast(node_pid,{:initiate_again, {node_key, node_pid}, neighbor_provider_id,request})
     Enum.each(nodes_map, fn {node_key,node_pid} ->
       GenServer.cast(node_pid,{:initiate_again,
               {node_key, node_pid}, neighbor_provider_id,request})
     end)
     convergence_criteria(children,0,request,length(children))
-    # Process.sleep(4000)
   end
 
   def createNodes(nodes, children) do
-    Enum.reduce(1..nodes, %{}, fn x, acc->
+    Enum.reduce(0..(nodes-1), %{}, fn x, acc->
       Map.put(acc,
-        String.slice(:crypto.hash(:sha,Integer.to_string(x))|> Base.encode16, 0..3),
-        Enum.at(children,x-1))
+        String.slice(:crypto.hash(:sha,Integer.to_string(x))|> Base.encode16, 0..7),
+        Enum.at(children,x))
     end)
   end
 
@@ -52,7 +53,6 @@ defmodule Master do
     end)
 
     all = if length(total)>=request do
-      Process.exit(target, :normal)
       Enum.filter(all,fn item ->
         item !=target
       end)
@@ -63,17 +63,10 @@ defmodule Master do
   end
 
   defp convergence_criteria(all, max_hop, request,total) do
-    # IO.puts("I am #{inspect self()}")
     if(length(all)>0) do
-      # IO.puts("I am #{inspect self()}")
       receive do
         {:ok,info}-> {:ok,info}
-        # IO.puts("boss")
-        {source, hop_count, _sender} = info
-        # IO.puts("Sent for #{inspect sender}")
-        # IO.puts("#{inspect Process.exit(source, :normal)}")
-        # IO.puts("remaining #{inspect (all)}")
-        IO.puts("__________________________")
+        {source, hop_count} = info
         matches = Enum.filter(all,fn item ->
           item == source
         end)
@@ -82,7 +75,9 @@ defmodule Master do
         else
           all
         end
-        # IO.puts("remaining #{inspect (all)}")
+        if length(all)==1 do
+          IO.puts("remaining #{inspect (all)}")
+        end
 
         max_hop =
           if max_hop<hop_count do
