@@ -12,6 +12,15 @@ defmodule NeighborsProvider do
     {:ok, state}
   end
 
+  def handle_call({:get_nearest_root,source}, from, state) do
+    nodes = Map.fetch(state, :nodes_map)
+    node_id = Enum.map(nodes, fn {id,_}->
+      id
+    end)
+    IO.puts("#{inspect node_id}")
+    {:reply, from, state}
+  end
+
   @impl true
   def handle_call({:assign, action, nodes_map, source},from,state) do
     if action == "Initialize" do
