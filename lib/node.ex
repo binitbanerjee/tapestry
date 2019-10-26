@@ -48,7 +48,7 @@ defmodule Node do
   end
 
   @impl true
-  def handle_call({:new_node_multicast,self_key,new_key,new_pid},_from,state) do
+  def handle_call({:new_node_multicast,_self_key,new_key,new_pid},_from,state) do
     {:ok,route_table} =Map.fetch(state,:finger_table)
     Enum.each(0..7, fn level_idx ->
       level_map = Map.get(route_table, level_idx)
@@ -65,7 +65,7 @@ defmodule Node do
   end
 
   @impl true
-  def handle_call({:new_node_update_state,root_finger_table, root_key, node_key, boss_id},_from,state) do
+  def handle_call({:new_node_update_state,root_finger_table, root_key, node_key, boss_id},_from,_state) do
     matched_level = find_prefix_len(root_key, node_key)
 
     route_table = Enum.reduce(0..matched_level, %{}, fn level_idx, acc ->
@@ -126,7 +126,7 @@ defmodule Node do
     end)
   end
 
-  def next_hop(self,target,hop_count, finger_table,original_source,neighbor_provider_id,last_hop_id) do
+  def next_hop(self,target,hop_count, finger_table,original_source,neighbor_provider_id,_last_hop_id) do
     level_match =
         find_prefix_len(self,target)
     next_hop =
@@ -214,7 +214,7 @@ defmodule Node do
             else
               level_map
             end
-          level_map = Map.put_new(level_map, slot, {node_key, node_pid})
+
           Map.put(acc, level_idx, level_map)
         else
           acc

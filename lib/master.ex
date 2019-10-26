@@ -10,9 +10,9 @@ defmodule Master do
   end
 
   def launch(nodes, request) do
-    initial_count = round(nodes*0.9)
+    initial_count = round(nodes*0.95)
     left_count = nodes-initial_count
-    IO.puts("#{inspect initial_count} #{inspect left_count}")
+    IO.puts("Initially started with #{inspect initial_count} peers, and later going to add #{inspect left_count} peers")
     children = Enum.map(1..initial_count, fn _x ->
       {:ok,pid} = Node.start_link([])
       pid
@@ -38,6 +38,7 @@ defmodule Master do
       GenServer.cast(node_pid,{:initiate_again,
               {node_key, node_pid}, neighbor_provider_id,request})
     end)
+
     # add_dynamic_node(nodes,table)
     convergence_criteria(children,0,request,length(children))
   end
